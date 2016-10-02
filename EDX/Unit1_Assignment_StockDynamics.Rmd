@@ -1,0 +1,152 @@
+---
+title: "Unit1_Assignment_StockDynamics"
+author: "Anuranjan"
+date: "23 September 2016"
+output: html_document
+---
+  
+#### In this problem, we'll take a look at how the stock dynamics of companies:IBM, General Electric (GE), Procter and Gamble, Coca Cola, and Boeing have changed over time.Each data frame has two variables, described as follows:  
+
+Date: the date of the stock price, always given as the first of the 'month'.  
+StockPrice: the average stock price of the company in the given month.  
+
+```{r setup, include=FALSE}
+setwd("C:/Users/Anuranjan-PC/Documents/R/R Projects/EDX/")
+```
+# Reading CSV files.
+```{r}
+
+IBM = read.csv('IBMStock.csv')
+GE = read.csv("GEStock.csv")
+ProcterGamble = read.csv("ProcterGambleStock.csv")
+CocaCola = read.csv("CocaColaStock.csv")
+Boeing = read.csv("BoeingStock.csv")
+summary(IBM)
+str(IBM)
+head(IBM)
+```
+# Since Date variable is stored as factor, converting it to Date object.
+```{r}
+IBM$Date=as.Date(IBM$Date,'%m/%d/%y')
+GE$Date=as.Date(GE$Date,'%m/%d/%y')
+ProcterGamble$Date=as.Date(ProcterGamble$Date,'%m/%d/%y')
+CocaCola$Date=as.Date(CocaCola$Date,'%m/%d/%y')
+Boeing$Date=as.Date(Boeing$Date,'%m/%d/%y')
+str(IBM)
+head(IBM)
+```
+# STR() function shows us that there are 480 observations. 
+# Earliest year in our dataset.
+```{r echo=FALSE}
+
+#cat("IBM:" + min(IBM$Date) + "GE:" + min(GE$Date) + "ProcterGamble:" + min(ProcterGamble$Date) + "CocaCola" + min(CocaCola$Date) + #"Boeing:" + min(Boeing$Date) )
+
+```
+```{r}
+c(min(IBM$Date), min(GE$Date), min(ProcterGamble$Date), min(CocaCola$Date) , min(Boeing$Date))
+```
+# Latest year in our dataset.
+```{r}
+c(max(IBM$Date), max(GE$Date), max(ProcterGamble$Date), max(CocaCola$Date) , max(Boeing$Date))
+```
+# Mean Stock Price
+```{r}
+c(mean(IBM$StockPrice), mean(GE$StockPrice), mean(ProcterGamble$StockPrice), mean(CocaCola$StockPrice) , mean(Boeing$StockPrice))
+```
+# Max Stock Price
+```{r}
+c(max(IBM$StockPrice), max(GE$StockPrice), max(ProcterGamble$StockPrice), max(CocaCola$StockPrice) , max(Boeing$StockPrice))
+```
+# Min Stock Price
+```{r}
+c(min(IBM$StockPrice), min(GE$StockPrice), min(ProcterGamble$StockPrice), min(CocaCola$StockPrice) , min(Boeing$StockPrice))
+```
+# Median Stock Price
+```{r}
+c(median(IBM$StockPrice), median(GE$StockPrice), median(ProcterGamble$StockPrice), median(CocaCola$StockPrice) , median(Boeing$StockPrice))
+```
+# Std Dev of Stock Price
+```{r}
+c(sd(IBM$StockPrice), sd(GE$StockPrice), sd(ProcterGamble$StockPrice), sd(CocaCola$StockPrice) , sd(Boeing$StockPrice))
+```
+# Generating plot for CocaCola. Adding arguement type="l" generates line instead of points.
+```{r}
+plot(CocaCola$Date,CocaCola$StockPrice, type = "l")
+```
+
+# Adding a new line to the plot by using the lines function instead of the plot function. Adding colours to the lines as well to distinguish better.
+Note:In R markdown, we need to execute 'plot' and 'lines' command in same R-box, otherwise it would give error "plot.new has not been called yet."
+```{r}
+plot(CocaCola$Date,CocaCola$StockPrice, type = "l",col="red")
+lines(ProcterGamble$Date, ProcterGamble$StockPrice,col="blue")
+
+```
+
+# Instead we could also have changed the line type of one to  distinguish better. We can draw vertical/horizontal line to make comparisons
+
+```{r}
+plot(CocaCola$Date,CocaCola$StockPrice, type = "l")
+lines(ProcterGamble$Date, ProcterGamble$StockPrice,lty=2)
+abline(v=as.Date(c("2000-03-01")), lwd=1)
+abline(h=80, lwd=2)
+```
+
+#  Visualizing stock prices changed from 1995-2005 for all five companies. 
+```{r}
+Y1995Start=which(IBM$Date=='1995-01-01')
+Y2005End=which(IBM$Date=='2005-12-01')
+plot(IBM$Date[Y1995Start:Y2005End], IBM$StockPrice[Y1995Start:Y2005End], type="l", col="red", ylim=c(0,210))
+lines(ProcterGamble$Date[Y1995Start:Y2005End], ProcterGamble$StockPrice[Y1995Start:Y2005End], col="green" )
+lines(CocaCola$Date[Y1995Start:Y2005End], CocaCola$StockPrice[Y1995Start:Y2005End] , col="orange")
+lines(GE$Date[Y1995Start:Y2005End], GE$StockPrice[Y1995Start:Y2005End], col="blue")
+lines(Boeing$Date[Y1995Start:Y2005End], Boeing$StockPrice[Y1995Start:Y2005End], col="violet")
+#abline(v=as.Date(c("1997-09-01","1997-11-01")),lwd=.1)
+```
+By looking at this plot, we can see that the stock for General Electric falls significantly more than the other stocks after the technology bubble burst and  IBM has the highest value, around 1999.
+  
+# Stocks trends during each month
+```{r}
+tapply(IBM$StockPrice,months(IBM$Date),mean)
+tapply(GE$StockPrice,months(GE$Date),mean)
+tapply(ProcterGamble$StockPrice,months(ProcterGamble$Date),mean)
+tapply(Boeing$StockPrice,months(Boeing$Date),mean)
+tapply(CocaCola$StockPrice,months(CocaCola$Date),mean)
+```
+*
+For IBM, we can see that the price has historically been higher than average during January - May, and lower than average during the remaining months.  
+*
+General Electric has an average stock price of 64.48 in April, which is higher than any other month.  
+*
+Coca-Cola has an average stock price of 62.69 in April, which is higher than any other month. 
+*
+Having lower stock prices in December is a trend that holds for all five companies.  
+
+**After seeing these trends, we are ready to buy stock in certain months and sell it in others! But, we should be careful, because one really good or really bad year could skew the average to show a trend that is not really there in general.**
+ 
+
+# Trying the above summary in the same graph. Not working, need to try more.
+```{r}
+plotStockByMonth <- function(company,LineCol){
+  stockByMonth = tapply(company$StockPrice,format(company$Date, "%m"),mean)
+  stockByMonthDF = as.data.frame(stockByMonth)
+  names(stockByMonthDF)=c("AvgStockPrice")
+  stockByMonthDF$month = names(stockByMonth)
+  if(count==0){
+    plot(stockByMonthDF$month,stockByMonthDF$AvgStockPrice, col=LineCol,type = "l")
+    count <<- count + 1
+  } else {
+    lines(stockByMonthDF$month,stockByMonthDF$AvgStockPrice, col=LineCol)
+    count <<- count + 1
+  }
+  
+}
+count=1
+plot.new()
+plotStockByMonth(IBM,"red")
+plotStockByMonth(GE,"orange")
+plotStockByMonth(ProcterGamble,"green")
+plotStockByMonth(Boeing,"blue")
+plotStockByMonth(CocaCola,"yellow")
+count
+```
+

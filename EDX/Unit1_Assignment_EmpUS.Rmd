@@ -1,0 +1,120 @@
+---
+title: "DEMOGRAPHICS AND EMPLOYMENT IN THE UNITED STATES"
+author: "Anuranjan"
+date: "23 September 2016"
+output: html_document
+---
+
+#### In the United States, the government measures unemployment using the Current Population Survey (CPS), which collects demographic and employment information from a wide range of Americans each month.
+CPS dataset represents people surveyed in the September 2013 CPS who actually completed a survey.  
+MetroAreaCodes dataset contains the mapping from codes to names of metropolitan areas.  
+CountryCodes dataset contains tThe mapping from codes to names of countries.
+```{r setup, include=FALSE}
+setwd("C:/Users/Anuranjan-PC/Documents/R/R Projects/EDX/")
+```
+#Reading CSV File
+```{r}
+CPS=read.csv("CPSData.csv")
+MetroAreaMap=read.csv("MetroAreaCodes.csv")
+CountryMap=read.csv("CountryCodes.csv")
+summary(CPS)
+str(CPS)
+summary(MetroAreaMap)
+str(MetroAreaMap)
+summary(CountryMap)
+str(CountryMap)
+
+```
+# Some Max and Min parameters.
+Among the interviewees with a value reported for the Industry variable, what is the most common industry of employment?
+```{r}
+sort(table(CPS$Industry))[length(sort(table(CPS$Industry)))]
+```
+
+Which state has the fewest and largest interviewees?
+```{r}
+sort(table(CPS$State))[1]
+sort(table(CPS$State))[length(sort(table(CPS$State)))]
+```
+Races where there are at least 250 interviewees in the CPS dataset of Hispanic ethnicity.
+```{r}
+CPS_Hispanic=subset(CPS,CPS$Hispanic != 0)
+CPS_Race_atleast250_Hispanic=table(CPS_Hispanic$Race)
+CPS_Race_atleast250_Hispanic[CPS_Race_atleast250_Hispanic > 249]
+```
+
+Which variables have at least one interviewee with a missing (NA) value i.e. which columns have atleast one NA value.
+```{r}
+# or we can use names(which(colSums(is.na(CPS))>0))
+colnames(CPS)[colSums(is.na(CPS)) > 0]
+```
+Which region of the United States has the largest proportion of interviewees living in a non-metropolitan area? (aka they have a missing MetroAreaCode value)
+
+```{r}
+table(CPS$Region, is.na(CPS$MetroAreaCode))
+```
+Midwest has the most TRUE values i.e. missing MetroAreaCode values. But calculation proportion will involve manual work.
+
+The **mean()** function, which takes the average of the values passed to it, will treat TRUE as 1 and FALSE as 0, meaning it returns the proportion of values that are true. For instance, mean(c(TRUE, FALSE, TRUE, TRUE)) returns 0.75. Knowing this, we can use tapply() with the mean function to answer proportion type questions. e.g. Which state has a proportion of interviewees living in a non-metropolitan area closest to 30%?
+```{r}
+tapply(is.na(CPS$MetroAreaCode), CPS$State, mean)
+```
+
+It will be easier to answer this question if the proportions are sorted, which can be accomplished with:
+```{r}
+sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
+```
+we can see that Wisconsin is the state closest to having 30% of its interviewees from a non-metropolitan area
+
+# Merging two DataFrames using merge().
+The first two arguments determine the data frames to be merged (they are called "x" and "y", respectively, in the subsequent parameters to the merge function). by.x="MetroAreaCode" means we're matching on the MetroAreaCode variable from the "x" data frame (CPS), while by.y="Code" means we're matching on the Code variable from the "y" data frame (MetroAreaMap). Finally, all.x=TRUE means we want to keep all rows from the "x" data frame (CPS), even if some of the rows' MetroAreaCode doesn't match any codes in MetroAreaMap (for those familiar with database terminology, this parameter makes the operation a **left outer join** instead of an inner join).
+```{r}
+CPS = merge(CPS, MetroAreaMap, by.x="MetroAreaCode", by.y="Code", all.x=TRUE)
+```
+
+Which metropolitan area has the highest proportion of interviewees of Hispanic ethnicity? 
+```{r}
+temp=sort(tapply(CPS$Hispanic,CPS$MetroArea,mean))
+temp[length(temp)]
+```
+
+Determine the number of metropolitan areas in the United States from which at least 20% of interviewees are Asian.
+```{r}
+temp=sort(tapply(CPS$Race=="Asian",CPS$MetroArea,mean))
+length(temp[temp>=0.20])
+```
+
+Determine which metropolitan area has the smallest proportion of interviewees who have received no high school diploma.(Hint:ignore NA values as none of the interviewees aged 14 and younger have an education value reported, so the mean value is reported as NA for each metropolitan area. )
+```{r}
+temp=sort(tapply(CPS$Education == "No high school diploma", CPS$MetroArea, mean,na.rm=TRUE))
+temp[1]
+```
+
+# Merging Country Code
+```{r}
+CPS = merge(CPS, CountryMap, by.x="CountryOfBirthCode", by.y="Code", all.x=TRUE)
+```
+
+How many interviewees have a missing value for the new country of birth variable?
+```{r}
+temp=summary(CPS$Country)
+temp["NA's"]
+```
+
+What proportion of the interviewees from the "New York-Northern New Jersey-Long Island, NY-NJ-PA" metropolitan area have a country of birth that is not the United States
+```{r}
+temp=table(CPS$MetroArea == "New York-Northern New Jersey-Long Island, NY-NJ-PA", CPS$Country != "United States")
+temp
+
+```
+Here, first condition come in rows and second form columns. Next, (FALSE and TRUE come in order). So to get the answer of the question, we can use
+```{r}
+temp[2,2]/(temp[2,1]+temp[2,2])
+```
+Which metropolitan area has the largest number (note -- not proportion) of interviewees with a country of birth in India? 
+To obtain the number of TRUE values in a vector of TRUE/FALSE values, you can use the sum() function. For instance, sum(c(TRUE, FALSE, TRUE, TRUE)) is 3. 
+```{r}
+temp=sort(tapply(CPS$Country == "India", CPS$MetroArea, sum, na.rm=TRUE))
+temp[length(temp)]
+```
+

@@ -1,0 +1,100 @@
+---
+title: "CLIMATE CHANGE"
+author: "Anuranjan"
+date: "24 September 2016"
+output: html_document
+---
+## The file climate_change.csv contains climate data from May 1983 to December 2008.The available variables include:
+**Year**: the observation year.  
+**Month**: the observation month.  
+**Temp**: the difference in degrees Celsius between the average global temperature in that period and a reference value. This data comes from the Climatic Research Unit at the University of East Anglia.
+CO2, N2O, CH4, CFC.11, CFC.12: atmospheric concentrations of carbon dioxide (CO2), nitrous oxide (N2O), methane  (CH4), trichlorofluoromethane (CCl3F; commonly referred to as CFC-11) and dichlorodifluoromethane (CCl2F2; commonly referred to as CFC-12), respectively. This data comes from the ESRL/NOAA Global Monitoring Division.
+CO2, N2O and CH4 are expressed in ppmv (parts per million by volume  -- i.e., 397 ppmv of CO2 means that CO2 constitutes 397 millionths of the total volume of the atmosphere)
+CFC.11 and CFC.12 are expressed in ppbv (parts per billion by volume).  
+**Aerosols**: the mean stratospheric aerosol optical depth at 550 nm. This variable is linked to volcanoes, as volcanic eruptions result in new particles being added to the atmosphere, which affect how much of the sun's energy is reflected back into space. This data is from the Godard Institute for Space Studies at NASA.  
+**TSI**: the total solar irradiance (TSI) in W/m2 (the rate at which the sun's energy is deposited per unit area). Due to sunspots and other solar phenomena, the amount of energy that is given off by the sun varies substantially with time. This data is from the SOLARIS-HEPPA project website.  
+**MEI**: multivariate El Nino Southern Oscillation index (MEI), a measure of the strength of the El Nino/La Nina-Southern Oscillation (a weather effect in the Pacific Ocean that affects global temperatures). This data comes from the ESRL/NOAA Physical Sciences Division.  
+
+```{r setup, include=FALSE}
+setwd("C:/Users/Anuranjan-PC/Documents/R/R Projects/EDX/")
+```
+## Reading CSV files. 
+```{r}
+climate = read.csv("climate_change.csv")
+str(climate)
+summary(climate)
+
+```
+
+## Creating Training and Test data set.
+```{r}
+train = subset(climate, Year <= 2006)
+test = subset(climate, Year > 2006)
+```
+
+## Creating Linear Model. 
+Temp is dependent variable and (MEI,CO2,..) are dependent variables. we can include many by using '+'. 
+```{r}
+climatelm=lm(Temp ~ MEI + CO2 + CH4 + N2O + CFC.11 + CFC.12 + TSI + Aerosols, data=train)
+summary(climatelm)
+```
+* Details:  
+**Estimate** : gives estimates of the beta values for our model. Dependent variable is directly proportional to this value.i.e.if positive, Dependent variable value will increase if it increases and decreas if it decreases.
+**Std.Error**:The standard error column gives a measure of how much the coefficient is likely to vary from the estimate value.  
+**t value**:The t value is the estimate divided by the standard error. It will be negative if the estimate
+is negative and positive if the estimate is positive.  The larger the **absolute value** of the t value, the more likely the coefficient is to be significant. So we want independent variables with a large absolute value
+in this column.  
+**Pr(>|t|)**:The last column of numbers gives a measure of how plausible it is that the coefficient is actually 0, given the data we used to build the model.The less plausible it is, or the smaller the probability number in this column, the less likely it is that our coefficient estimate is actually 0. This number will be large if the absolute value of the t value is small, and it will be small if the absolute value of the t
+value is large. We want independent variables with small values in this column.  
+**Stars at end of each row**: More the stars, more better.  
+**Multiple R-squared** :R-squared value  (1 - SSE/SST)
+**Adjusted R-squared**:This number adjusts the R-squared value to account for the number of independent variables used relative to the number of data points.  
+* NOTE:Multiple R-squared will always increase if you add more independent variables.But Adjusted R-squared will decrease if you add an independent variable that doesn't help the model.This is a good way to determine if an additional variable should even be included in the model.  
+
+#### So, all of the variables have at least one star except for CH4 and N2O. So MEI, CO2, CFC.11, CFC.12, TSI, and Aerosols are all significant.  
+  
+  
+### Checking corelation.
+```{r}
+cor(climate)
+```
+* A high correlation between an independent variable and the dependent variable is a good thing since we're trying to predict the dependent variable using the independent variables.  
+**Due to the possibility of multicollinearity, we should remove the insignificant variables one at a time.** 
+  
+  
+
+### Since N2O seems to be highly correlated with many, building another model keeping in view this.
+```{r}
+climatelm2=lm(Temp ~ MEI + TSI + Aerosols + N2O, data = train)
+summary(climatelm2)
+```
+* We have observed that, for this problem, when we remove many variables the sign of N2O flips. The model has not lost a lot of explanatory power (the model R2 is 0.7261 compared to 0.7509 previously) despite removing many variables.In this particular problem many of the variables (CO2, CH4, N2O, CFC.11 and CFC.12) are highly correlated, since they are all driven by human industrial development.
+  
+  
+### R provides a function, step, that will automate the procedure of trying different combinations of variables to find a good compromise of model simplicity and R2. This trade-off is formalized by the Akaike information criterion (AIC) - it can be informally thought of as the quality of the model with a penalty for the number of variables in the model.  
+```{r}
+StepModel = step(climatelm)
+summary(StepModel)
+```
+It is interesting to note that the step function does not address the collinearity of the variables, except that adding highly correlated variables will not improve the R2 significantly. The consequence of this is that the step function will not necessarily produce a very interpretable model - just a model that has balanced quality and simplicity for a particular weighting of quality and simplicity (AIC).  
+  
+  
+### Our residuals, or error terms, are stored in the vector StepModel1$residuals.
+```{r}
+head(StepModel$residuals)
+```
+### Sum of Squared Error
+```{r}
+SSE_model=sum(StepModel$residuals^2)
+SSE_model
+```
+  
+### Using the model produced from the step function, calculating temperature predictions for the testing data set, using the predict function.
+```{r}
+tempPredict = predict(StepModel, newdata = test)
+SSE_prediction = sum((tempPredict - test$Temp)^2)
+SSE_prediction
+SST = sum( (mean(train$Temp) - test$Temp)^2)
+R2 = 1 - SSE_prediction/SST
+R2
+```  

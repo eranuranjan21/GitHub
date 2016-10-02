@@ -1,0 +1,10 @@
+---
+title: "POPULARITY OF MUSIC RECORDS"
+author: "Anuranjan"
+date: "25 September 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+setwd("C:/Users/Anuranjan-PC/Documents/R/R Projects/EDX/")
+```
+## Reading CSV files. 

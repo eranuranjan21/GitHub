@@ -1,0 +1,94 @@
+---
+title: "READING TEST SCORES"
+author: "Anuranjan"
+date: "25 September 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+setwd("C:/Users/Anuranjan-PC/Documents/R/R Projects/EDX")
+```
+## Load the training and testing sets
+```{r}
+pisaTrain=read.csv("pisa2009train.csv")
+pisaTest=read.csv("pisa2009test.csv")
+summary(pisaTrain)
+str(pisaTrain)
+
+```
+### Average reading test score of males and females
+Male - 1
+Female - 0
+```{r}
+tapply(pisaTrain$readingScore,pisaTrain$male,mean,na.rm=TRUE)
+```
+### Variables that are missing data in at least one observation in the training set
+```{r}
+colnames(pisaTrain)[colSums(is.na(pisaTrain))>0]
+```
+### Linear regression discards observations with missing data, so we will remove all such observations from the training and testing sets.
+```{r}
+pisaTrain=na.omit(pisaTrain)
+pisaTest=na.omit(pisaTest)
+colnames(pisaTrain)[colSums(is.na(pisaTrain))>0]
+colnames(pisaTest)[colSums(is.na(pisaTest))>0]
+```
+  
+**For variable raceeth, by default, R selects first level alphabetically as shown by code.**
+```{r}
+str(pisaTrain$raceeth)
+```
+We can reset the reference level using following code.
+```{r}
+pisaTrain$raceeth = relevel(pisaTrain$raceeth, "White")
+pisaTest$raceeth = relevel(pisaTest$raceeth, "White")
+str(pisaTrain$raceeth)
+```
+
+## Creating Linear Model.
+We can use dot(.) if we want to use all the independent variables in our model.
+```{r}
+lmScore=lm(readingScore ~ . , data=pisaTrain)
+summary(lmScore)
+```
+Note that the R-squared is lower than the usuals. This does not necessarily imply that the model is of poor quality. More often than not, it simply means that the prediction problem at hand (predicting a student's test score based on demographic and school-related variables) is more difficult than other prediction problems (like predicting a team's number of wins from their runs scored and allowed, or predicting the quality of wine from weather conditions).
+  
+  
+## Calculating Root Mean Square Error.
+```{r}
+SSE = sum(lmScore$residuals^2)
+RMSE = sqrt(SSE/nrow(pisaTrain))
+RMSE
+```
+A alternative way of getting this answer would be with the following command:
+
+```{r}
+sqrt(mean(lmScore$residuals^2))
+```
+  
+#### Question : Consider two students A and B. They have all variable values the same, except that student A is in grade 11 and student B is in grade 9. What is the predicted reading score of student A minus the predicted reading score of student B?
+```{r}
+2*lmScore$coefficients["grade"]
+```
+  
+#### Question: What is the meaning of the coefficient associated with variable raceethAsian?  
+```{r}
+lmScore$coefficients["raceethAsian"]
+```
+The only difference between an Asian student and white student(set as reference level) with otherwise identical variables is that the former has raceethAsian=1 and the latter has raceethAsian=0. The predicted reading score for these two students will differ by the coefficient on the variable raceethAsian.
+  
+  
+### Predicting on Test data  
+```{r}
+predTest=predict(lmScore,newdata = pisaTest)
+summary(predTest)
+SSE_test = sum((predTest - pisaTest$readingScore)^2)
+RMSE_test = sqrt(SSE_test/nrow(pisaTest))
+SSE_test
+RMSE_test
+baseline = mean(pisaTrain$readingScore)
+SST_Test = sum((baseline - pisaTest$readingScore)^2)
+SST_Test
+R2_Test = 1 - SSE_test/SST_Test
+R2_Test
+```
+
